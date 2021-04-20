@@ -1,0 +1,148 @@
+﻿Dès l'étape 4 , nous avons commencé à modéliser les acteurs signaux comme étant
+des entités d'aires (AreaEntity ) selon leurs comportements.
+Deux catégories se distinguent clairement , Les Collectables et les Switchers.
+
+_______________________CLASSE COLLECTABLE_________________________________________________________________________________
+
+Les collectables rassemblent essentiellement tous les objets pouvant être collectés
+par une interaction à distance.En plus d'être tous des AreaEntity ,elles partagent toutes les caractéristiques communes
+suivantes :L'impossibilité de les traverser,l'occupation d'une unique cellule ,et la présence d'une méthode void Pickup()
+modélisant leurs capacité à se désenregistrer de la liste des acteurs , une fois qu'ils ont été collectés.
+ 
+Dans cette optique , sept classes héritent de Collectable  : 
+        -Apple  : représentant des pommes
+        -Cake   : représentant des gâteaux
+        -Cup    : représentant des trophées
+        -Ingot  : représentant des lingots
+        -Key    : représentant des clés
+        -Potion : représentant des potions
+        -Weapons: représentant les 3 armes : épée , hache et arc.
+
+Chacune de ces classes,implémente l'interface Logic ( sauf Apple qu'on a préféré garder conforme aux instructions de l'énoncé)
+et a son propre attribut booléan On , qui indique si l'objet à été collecté(true) ou pas et son attribut sprite , qui contient
+le sprite convenable.
+La méthode AcceptInteraction est rédéfinie de la même manière dans toutes les classes mentionnées ci-dessus , et par conséquent
+sept méthodes default InteractWith ont été ajoutées à l'interface EnigmeInteractionVisitor.Chacune de ces méthodes contient 
+l'argument approprié,elles sont chacune redéfinies dans la classe EnigmePlayerHandler pour gérer les interactions : à chaque demande 
+d'interaction à distance , l'objet se désenregistre de la liste des acteurs (objet.pickup()) et son booléen indiquant
+s'il est collecté, passe à true à travers un Setter.
+La classe Cup , contient en plus des autres classes analogues , un attribut Logic , dont le signal conditionnera
+si son sprite sera dessiné ou pas.D'où la redéfinition de la méthode Draw qui ne dessine le sprite que si l'intensité du signal
+est en 1. Ce signal est donné comme argument du constructeur.
+Ce choix découle du fait que le Cup est un objet rare qui n'apparaît que si des conditions de signaux sont réalisées(voir plus bas
+dans la partie extensions).
+
+
+_________________________LA CLASSE SWITCHER________________________________________________________________________________________
+
+Les Switchers rassemblent essentiellement les objets caractérisés par une
+variable booléen dont la valeur indique s'ils sont à l'état On = true ou Off = false
+La classe Switcher est dotée d'une méthode void switcher() qui inverse la valeur du Boolean
+On.Notons aussi que cette classe implémente Logic.
+
+Dans cette optique , trois classes héritent de Switcher :
+  
+ -Torch
+ -PressureSwitch
+ -Lever
+
+Chacune de ces classes à deux sprites modélisant l'état On/off , et redéfinit proprement
+les méthodes TakeCellSpace() , isViewInteractable() ,isCellInteractable(),selon les exigences
+de l'énoncé. La rédefinition de AcceptInteraction  et l'adaptation de l'interface EnigmeInteractionVisitor 
+ont été faites suivant la même logique que dans la classe Collectable sauf que dans EnigmePlayerHandler 
+c'est la méthode switcher() de la classe Switcher qui est appelée pour chaque objet.l'interaction avec
+le pressureSwitch s'assure que le targetMainCellCoordinates et les coordonnées du CurrentCell sont 
+identiques avant de switcher l'état pour avoir l'effet demandé.
+
+_______________________La classe PressurePlate___________________________________________________________________________________
+
+Nous avons doté cette classe d'un attribut timer de type float pour permettre l'activation/désactivation
+temporaire du pressurePlate , grâce à la redéfinition de sa méthode update.
+Notons que nous avons choisi le temps de désactivation à 1f parcequ'on trouvait que le 0.3f proposé
+dans l'énoncé était trop petit(le pressurePlate s'allume et s'éteint trop rapidement)
+
+_______________________LES_EXTENSIONS_AJOUTÉES__________________________________________________________________________________
+
+  1-ANIMATIONS
+
+Pour réaliser un sprite animé , nous avons réadapté la classe Enigmeplayer en remplaçant l'attribut Sprite
+par 4 tableaux de sprites : SpritesUP , SpritesDOWN , spritesRIGHT et spritesLEFT , chacun de taille 4 ,
+initialisés dans le constructeur selon les sprites donnés dans le dossier res.
+Nous avons aussi ajouté un attribut stepCounter de type int , pour compter le nombre de pas , qui sera utile 
+à l'animation. cet attribut est incrementé de 1 dans la méthode Update à chaque fois qu'un mouvement est fait
+ou qu'une orientation est modifiée.
+La méthode draw a aussi été réadaptée de sorte à dessiner le sprite dans la bonne direction et dans
+le bon état de mouvement ( un parmi les quatres contenus dans une colonne de sprite de cette direction, selon la 
+valeur du stepCounter).
+
+            --------------------------------------------
+
+  2-Dialogues : 
+
+Deux sortes de dialogues ont été introduits :
+
+>Les dialogues de niveau qui se lancent dès l'entrée dans la partie 1 et 2 de Enigme 1 :
+Deux attributs de type Dialog ont été placés dans la classe Enigme 1 ,initalisés dans le Begin et récupérés à travers
+des getters dans la classe Enigme qui les dessine dans son Update si l'aire et la position sont celles d'entrée.
+
+>Les dialogues qui se lancent après l'interaction avec un personnage non joueur : voir l'extension 
+"Évenements du scénario se déclenchant avec des signaux".
+
+Nous avons été amenés à modifier le fichier XML strings_fr , pour ajouter nos propres indications.
+Nous avons également modifié la valeur de l'attribut MAX_LINE_SIZE et le coefficient multiplicateur
+du fontSize dans le constructeur pour équilibrer la taille de la police et le nombre de mots par ligne,
+ceci pour une meilleure présentation et un maximum de lisibilité.
+
+            --------------------------------------------
+
+  3- Pause du jeu :
+
+Pour introduire la possibilité de mettre le jeu en pause , nous avons ajouté un attribut à la classe
+Area de type Boolean play initialisé à true , et nous avons modifié la méthode update de sorte à 
+récupérer les interactions de la touche espace du clavier qui inversera la valeur de l'attribut play.
+De plus ,nous avons exigés que la mise à jour des acteurs ne se fasse que si Play est à true.
+
+
+            --------------------------------------------
+
+  4-Évenements du scénario se déclenchant avec des signaux :
+
+Il s'agit d'un personnage non joueur donnant des indications ,qui apparait dans Enigme1 et Enigme2
+suivant des signaux spécifiques.
+Pour cela , nous avons mis en place une classe OldManHelper héritant de AreaEntity dotée d'un attribut
+dialog de type Dialog , d'un attribut dialogOn de type boolean indiquant le déclenchement du dialogue ,
+d'un attribut de type Logic et d'un Sprite.
+L'idée est que ce personnage puisse apparaître suite à des conditions logiques , mais que son dialogue
+ne s'affiche que si le joueur demande une interaction à distance avec ce personnage.
+C'est pourquoi la méthode draw à été conditionnée par l'intensité de l'attribut logic et par l'attribut dialogOn,
+de sorte à afficher le joueur que si l'intensité vaut 1 , et n'afficher le dialogue que si une interaction est
+demandée.
+La méthode isViewInteractable() est aussi conditionnée par la valeur de l'intensité logique de sorte à assurer
+le fait que l'interaction ne puisse se faire que si le personnage est visible.
+L'interaction est gérée au niveau du EnigmePlayerHandler au moyen de la méthode InteractWith() dans 
+la même optique que celle presentée dans les classes Collectable et Switcher. Toutefois, dans notre cas , cette méthode
+se contente de mettre à true l'attribut dialogOn au moyen d'un Setter lors d'une demande d'interaction 
+pour afficher le dialogue contenant les indications.
+Ce personnage apparaît dans la partie 2 de l'enigme 1 après la collecte de 2 potions pour donner des
+indications , et apparaît dans l'enigme 2 inconditionnellement pour donner des indications.
+
+            --------------------------------------------
+
+  5-Passages permettant de se téléporter vers certains niveaux/endroits du jeu :
+
+Il s'agit de la classe GellyTeleporter qui hérite de la classe Door , mais qui a en plus deux Sprites 
+l'un modélisant le portail fermé , l'autre ouvert , et un attribut de type Logic dont l'intensité impose
+le fait que la cellule soit traversable ou pas (méthode isCellInteractable()). Cet attribut permet aussi
+de conditionner la méthode draw de manière à ce qu'elle dessine le Sprite convenablement.
+
+            --------------------------------------------
+
+  6-Ajout d'un objet Safe dont l’ouverture est dirigée par un signal:
+
+Nous avons imaginé un SafeBird,  qui représente un pigeon , qui une fois débloqué par une clé ,disparait 
+en laissant un cadeau pour le joueur: il s'agit d'un objet type Cup.
+Techniquement , nous avons introduit la classe SafeBird héritant de AreaEntity , qu'on a doté d'un
+attribut de type Sprite et d'un attribut de type Logic dont l'intensité conditionnera sa méthode draw. 
+Celle-ci le dessinera tant qu'il n'a pas été débloqué (Intensité nulle).Le fait qu'il donnera un objet de type
+Cup est géré localement au niveau du begin de l'enigme 2 , qui introduit un Cup dont le signal logique 
+est la clé conditionnant le déblocage du safeBird.
